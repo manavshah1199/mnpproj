@@ -61,9 +61,61 @@ class RiskEngine {
         reasons.add('A health condition on file increases heat sensitivity.');
       }
     }
+    // --- COLD ---
+    if (feels != null && feels <= 32) {
+      if (feels <= 0) {
+        level = _worst(level, RiskLevel.danger);
+        reasons.add('Wind chill ${feels.round()}°F — frostbite in minutes.');
+        actions.add('Avoid going outside; cover all exposed skin.');
+      } else if (feels <= 15) {
+        level = _worst(level, RiskLevel.danger);
+        reasons.add('Wind chill ${feels.round()}°F — frostbite risk.');
+        actions.add('Limit time outdoors; wear hat, gloves, and layers.');
+      } else {
+        level = _worst(level, RiskLevel.caution);
+        reasons.add('Wind chill ${feels.round()}°F — dress warm.');
+        actions.add('Wear layers and keep extremities covered.');
+      }
+
+      // Personal escalation for cold
+      if (!profile.hasHeating && feels <= 32) {
+        level = _escalate(level);
+        reasons.add('No reliable heating during freezing conditions.');
+        actions.add('Consider a warming center (see Nearest Help).');
+      }
+      if (profile.age != null && profile.age! >= 65 && feels <= 15) {
+        level = _escalate(level);
+        reasons.add('Age 65+ raises hypothermia risk.');
+      }
+    }
+        // --- WEATHER ALERTS (drivers care most) ---
+    for (final alert in weather.alerts) {
+      final event = alert.event.toLowerCase();
+      final isRoadHazard = event.contains('flood') ||
+          event.contains('storm') ||
+          event.contains('ice') ||
+          event.contains('snow');
+
+      final sev = alert.severity.toLowerCase();
+      if (sev == 'severe' || sev == 'extreme') {
+        level = _worst(level, RiskLevel.danger);
+      } else {
+        level = _worst(level, RiskLevel.caution);
+      }
+      reasons.add('Active alert: ${alert.event}.');
+
+      // Driver mode gets road-specific advice — same engine, different emphasis.
+      if (profile.mode == Mode.driver && isRoadHazard) {
+        level = RiskLevel.danger;
+        actions.add('${alert.event}: avoid flooded roads — "Turn Around, Don\'t Drown."');
+        actions.add('Delay non-essential driving until it clears.');
+      } else {
+        actions.add('Follow official guidance for: ${alert.event}.');
+      }
+    }
           // --- If nothing raised the level, say so plainly ---
     if (level == RiskLevel.safe && reasons.isEmpty) {
-      reasons.add('No dangerous heat right now.');
+      reasons.add('No dangerous heat, cold, or active alerts right now.');
       actions.add('No special precautions needed. Check back later.');
     }
 
@@ -80,4 +132,7 @@ class RiskEngine {
     if (level == RiskLevel.danger) return RiskLevel.danger;
     return RiskLevel.caution;
   }
+
+  /// Return the higher (worse) of two levels.
+ static RiskLevel _worst(RiskLevel a, RiskLevel b) => a.index >= b.index ? a : b;
 }
