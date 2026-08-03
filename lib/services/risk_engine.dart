@@ -135,4 +135,62 @@ class RiskEngine {
 
   /// Return the higher (worse) of two levels.
  static RiskLevel _worst(RiskLevel a, RiskLevel b) => a.index >= b.index ? a : b;
+
+ /// OSHA-style work/rest guidance for outdoor workers.
+/// [sessionMinutes] = how long they've been working outside so far.
+static WorkRest workRest(double? feels, int sessionMinutes) {
+  if (feels == null || feels < 90) {
+    return WorkRest(applies: false); // not hot enough to force breaks
+  }
+
+  int work;
+  int rest;
+  String note;
+  if (feels >= 100) {
+    work = 15;
+    rest = 45;
+    note = 'Extreme heat: 15 min work / 45 min rest.';
+  } else if (feels >= 95) {
+    work = 30;
+    rest = 30;
+    note = 'High heat: 30 min work / 30 min rest.';
+  } else {
+    work = 45;
+    rest = 15;
+    note = 'Elevated heat: 45 min work / 15 min rest.';
+  }
+
+  final cycle = work + rest;
+  final posInCycle = sessionMinutes % cycle;
+  final breakDue = posInCycle >= work;
+  final untilBreak = breakDue ? 0 : work - posInCycle;
+
+  return WorkRest(
+    applies: true,
+    workMinutes: work,
+    restMinutes: rest,
+    note: note,
+    breakDue: breakDue,
+    minutesUntilBreak: untilBreak,
+  );
+}
+}
+
+/// Outdoor-worker break guidance produced by RiskEngine.workRest().
+class WorkRest {
+  final bool applies; // false when it's not hot enough to matter
+  final int workMinutes;
+  final int restMinutes;
+  final String note;
+  final bool breakDue; // is a break due right now?
+  final int minutesUntilBreak;
+
+  WorkRest({
+    this.applies = false,
+    this.workMinutes = 0,
+    this.restMinutes = 0,
+    this.note = '',
+    this.breakDue = false,
+    this.minutesUntilBreak = 0,
+  });
 }
