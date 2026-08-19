@@ -1,0 +1,7 @@
+[
+  { "name": "Edison Public Library", "address": "340 Plainfield Ave, Edison, NJ", "type": "cooling", "lat": 40.5301, "lon": -74.4008, "openHour": 9, "closeHour": 21 },
+  { "name": "New Brunswick Senior Center", "address": "195 Robinson St, New Brunswick, NJ", "type": "both", "lat": 40.4917, "lon": -74.4390, "openHour": 8, "closeHour": 16 },
+  { "name": "Woodbridge Community Center", "address": "600 Main St, Woodbridge, NJ", "type": "both", "lat": 40.5576, "lon": -74.2846, "openHour": 8, "closeHour": 20 },
+  { "name": "Elizabeth Senior Center", "address": "618 Salem Ave, Elizabeth, NJ", "type": "both", "lat": 40.6640, "lon": -74.2107, "openHour": 8, "closeHour": 17 },
+  { "name": "Plainfield Public Library", "address": "800 Park Ave, Plainfield, NJ", "type": "cooling", "lat": 40.6198, "lon": -74.4157, "openHour": 10, "closeHour": 20 }
+]

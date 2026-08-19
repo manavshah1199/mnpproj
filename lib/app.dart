@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'models/user_profile.dart';
 import 'models/weather_snapshot.dart';
+import 'services/location_service.dart';
 import 'services/risk_engine.dart';
-import 'screens/home_screen.dart';
+import 'services/storage_service.dart';
+import 'services/weather_service.dart';
+import 'screens/main_scaffold.dart';
+import 'screens/onboarding_screen.dart';
 
 class WeatherGuardApp extends StatelessWidget {
   const WeatherGuardApp({super.key});
@@ -28,54 +32,69 @@ class AppState extends StatefulWidget {
 }
 
 class _AppStateState extends State<AppState> {
-  // TODO: replace with a real onboarding flow (Module 4).
-  UserProfile _profile = UserProfile(
-    mode: Mode.outdoorWorker,
-    age: 45,
-    hasAC: true,
-    hasHeating: true,
-  );
+  // Null while we're checking storage, and null after that if the user
+  // hasn't completed onboarding yet.
+  UserProfile? _profile;
+  bool _profileLoading = true;
 
-  // TODO: replace with a live NWS API call (Module 5).
-  WeatherSnapshot _weather = WeatherSnapshot(
-    tempF: 96,
-    heatIndexF: 104,
-    humidity: 55,
-    windMph: 6,
-    shortForecast: 'Sunny',
-    locationName: 'Scotch Plains, NJ',
-    observedAt: DateTime.now(),
-    isSample: true,
-    alerts: [
-      WeatherAlert(
-        event: 'Excessive Heat Warning',
-        severity: 'Severe',
-        headline: 'Dangerous heat expected through this evening.',
-      ),
-    ],
-  );
+  // Null while the first location + weather fetch is in flight.
+  WeatherSnapshot? _weather;
+  bool _weatherLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+    _loadWeather();
+  }
+
+  Future<void> _loadProfile() async {
+    final saved = await StorageService.loadProfile();
+    if (!mounted) return;
+    setState(() {
+      _profile = saved;
+      _profileLoading = false;
+    });
+  }
+
+  Future<void> _loadWeather() async {
+    setState(() => _weatherLoading = true);
+    final loc = await LocationService.getLocation();
+    final weather = await WeatherService.fetchWeather(loc.lat, loc.lon);
+    if (!mounted) return;
+    setState(() {
+      _weather = weather;
+      _weatherLoading = false;
+    });
+  }
 
   void updateProfile(UserProfile newProfile) {
     setState(() {
       _profile = newProfile;
     });
-  }
-
-  void updateWeather(WeatherSnapshot newWeather) {
-    setState(() {
-      _weather = newWeather;
-    });
+    StorageService.saveProfile(newProfile);
   }
 
   @override
   Widget build(BuildContext context) {
-    final result = RiskEngine.assess(_weather, _profile);
+    if (_profileLoading || _weatherLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-    return HomeScreen(
-      profile: _profile,
-      weather: _weather,
+    final profile = _profile;
+    if (profile == null) {
+      return OnboardingScreen(onComplete: updateProfile);
+    }
+
+    final weather = _weather!;
+    final result = RiskEngine.assess(weather, profile);
+
+    return MainScaffold(
+      profile: profile,
+      weather: weather,
       result: result,
       onProfileChanged: updateProfile,
+      onRefresh: _loadWeather,
     );
   }
 }

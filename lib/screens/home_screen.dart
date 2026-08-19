@@ -10,12 +10,14 @@ class HomeScreen extends StatelessWidget {
     required this.weather,
     required this.result,
     required this.onProfileChanged,
+    required this.onRefresh,
   });
 
   final UserProfile profile;
   final WeatherSnapshot weather;
   final RiskResult result;
   final ValueChanged<UserProfile> onProfileChanged;
+  final VoidCallback onRefresh;
 
   Color _colorForLevel(RiskLevel level) {
     switch (level) {
@@ -47,6 +49,13 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('WeatherGuard'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: onRefresh,
+            tooltip: 'Refresh weather',
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
