@@ -19,4 +19,22 @@ class StorageService {
     if (raw == null) return null;
     return UserProfile.fromJson(jsonDecode(raw));
   }
+
+  static const _checkInKey = 'weathersafe.lastCheckIn';
+
+  /// Record that the user checked in right now.
+  static Future<void> recordCheckIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_checkInKey, DateTime.now().toIso8601String());
+  }
+
+  /// The time of the last check-in, or null if they never have.
+  static Future<DateTime?> loadLastCheckIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_checkInKey);
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
+
+
 }

@@ -4,6 +4,7 @@ import '../models/weather_snapshot.dart';
 import '../services/risk_engine.dart';
 import 'home_screen.dart';
 import 'help_screen.dart';
+import 'checkin_screen.dart';
 
 /// Holds the bottom navigation bar and switches between the main screens.
 class MainScaffold extends StatefulWidget {
@@ -31,7 +32,6 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    // The screens for each tab.
     final screens = [
       HomeScreen(
         profile: widget.profile,
@@ -40,6 +40,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         onProfileChanged: widget.onProfileChanged,
         onRefresh: widget.onRefresh,
       ),
+      CheckinScreen(profile: widget.profile),
       const HelpScreen(),
     ];
 
@@ -49,8 +50,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
+          NavigationDestination(icon: Icon(Icons.thermostat), label: 'Today'),
           NavigationDestination(
-              icon: Icon(Icons.thermostat), label: 'Today'),
+              icon: Icon(Icons.check_circle_outline), label: 'Check-in'),
           NavigationDestination(icon: Icon(Icons.place), label: 'Nearest Help'),
         ],
       ),
