@@ -36,5 +36,11 @@ class StorageService {
     return DateTime.tryParse(raw);
   }
 
+   /// Wipe the profile and check-in history (used by Reset).
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_profileKey);
+    await prefs.remove(_checkInKey);
+  }
 
 }

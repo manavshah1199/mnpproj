@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../models/weather_snapshot.dart';
 import '../services/risk_engine.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -49,11 +50,17 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('WeatherGuard'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
+         actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: onRefresh,
-            tooltip: 'Refresh weather',
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SettingsScreen(profile: widget.profile),
+                ),
+              );
+            },
           ),
         ],
       ),
