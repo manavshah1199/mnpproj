@@ -75,6 +75,12 @@ class _AppStateState extends State<AppState> {
     StorageService.saveProfile(newProfile);
   }
 
+    void resetProfile() {
+    setState(() {
+      _profile = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_profileLoading || _weatherLoading) {
@@ -95,6 +101,7 @@ class _AppStateState extends State<AppState> {
       result: result,
       onProfileChanged: updateProfile,
       onRefresh: _loadWeather,
+      onReset: resetProfile,
     );
   }
 }

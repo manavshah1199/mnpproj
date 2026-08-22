@@ -15,6 +15,7 @@ class MainScaffold extends StatefulWidget {
     required this.result,
     required this.onProfileChanged,
     required this.onRefresh,
+    required this.onReset,
   });
 
   final UserProfile profile;
@@ -22,6 +23,7 @@ class MainScaffold extends StatefulWidget {
   final RiskResult result;
   final ValueChanged<UserProfile> onProfileChanged;
   final VoidCallback onRefresh;
+  final VoidCallback onReset;
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -39,6 +41,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         result: widget.result,
         onProfileChanged: widget.onProfileChanged,
         onRefresh: widget.onRefresh,
+        onReset: widget.onReset,
       ),
       CheckinScreen(profile: widget.profile),
       const HelpScreen(),
