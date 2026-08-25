@@ -3,6 +3,7 @@ import '../models/user_profile.dart';
 import '../services/storage_service.dart';
 import '../services/location_service.dart';
 import '../services/weather_service.dart';
+import '../services/weather_sim.dart';
 import '../services/risk_engine.dart';
 
 class CheckinScreen extends StatefulWidget {
@@ -27,7 +28,8 @@ class _CheckinScreenState extends State<CheckinScreen> {
   Future<void> _load() async {
     final last = await StorageService.loadLastCheckIn();
     final loc = await LocationService.getLocation();
-    final weather = await WeatherService.fetchWeather(loc.lat, loc.lon);
+    final weather =
+        WeatherSim.apply(await WeatherService.fetchWeather(loc.lat, loc.lon));
     final risk = RiskEngine.assess(weather, widget.profile);
     if (!mounted) return;
     setState(() {
@@ -160,4 +162,3 @@ class _CheckinScreenState extends State<CheckinScreen> {
     );
   }
 }
-

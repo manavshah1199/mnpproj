@@ -5,6 +5,7 @@ import 'services/location_service.dart';
 import 'services/risk_engine.dart';
 import 'services/storage_service.dart';
 import 'services/weather_service.dart';
+import 'services/weather_sim.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/onboarding_screen.dart';
 
@@ -32,12 +33,9 @@ class AppState extends StatefulWidget {
 }
 
 class _AppStateState extends State<AppState> {
-  // Null while we're checking storage, and null after that if the user
-  // hasn't completed onboarding yet.
   UserProfile? _profile;
   bool _profileLoading = true;
 
-  // Null while the first location + weather fetch is in flight.
   WeatherSnapshot? _weather;
   bool _weatherLoading = true;
 
@@ -60,7 +58,8 @@ class _AppStateState extends State<AppState> {
   Future<void> _loadWeather() async {
     setState(() => _weatherLoading = true);
     final loc = await LocationService.getLocation();
-    final weather = await WeatherService.fetchWeather(loc.lat, loc.lon);
+    final weather =
+        WeatherSim.apply(await WeatherService.fetchWeather(loc.lat, loc.lon));
     if (!mounted) return;
     setState(() {
       _weather = weather;
@@ -69,16 +68,12 @@ class _AppStateState extends State<AppState> {
   }
 
   void updateProfile(UserProfile newProfile) {
-    setState(() {
-      _profile = newProfile;
-    });
+    setState(() => _profile = newProfile);
     StorageService.saveProfile(newProfile);
   }
 
-    void resetProfile() {
-    setState(() {
-      _profile = null;
-    });
+  void resetProfile() {
+    setState(() => _profile = null);
   }
 
   @override

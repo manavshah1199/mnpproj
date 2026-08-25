@@ -23,6 +23,7 @@ class WeatherSnapshot {
   final DateTime? observedAt;
   final String locationName;  // e.g. "Edison, NJ"
   final bool isSample;        // true if this is fallback data, not live
+  final bool isSimulated;     // true if this is demo/simulated data
 
   WeatherSnapshot({
     this.tempF,
@@ -35,7 +36,9 @@ class WeatherSnapshot {
     this.observedAt,
     this.locationName = '',
     this.isSample = false,
+    this.isSimulated = false,
   });
+
   /// The temperature that actually matters for risk:
   /// heat index when hot, wind chill when cold, otherwise plain temp.
   double? get feelsLike {

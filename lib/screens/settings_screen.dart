@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../services/storage_service.dart';
+import '../services/weather_sim.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserProfile profile;
@@ -140,6 +141,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             keyboardType: TextInputType.phone,
             decoration:
                 const InputDecoration(labelText: 'Trusted contact phone'),
+          ),
+          const SizedBox(height: 24),
+          const Text('Demo: weather simulator',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          DropdownButton<SimPreset>(
+            value: WeatherSim.active,
+            isExpanded: true,
+            onChanged: (p) {
+              if (p != null) setState(() => WeatherSim.active = p);
+            },
+            items: SimPreset.values
+                .map((p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(WeatherSim.label(p)),
+                    ))
+                .toList(),
+          ),
+          const Text(
+            'After changing this, go to the Today tab and tap refresh (↻).',
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 24),
           FilledButton(onPressed: _save, child: const Text('Save changes')),
