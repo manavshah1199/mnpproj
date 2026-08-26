@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Text('Start work session'),
               )
             else ...[
-              Text('Outside for ${_sessionMinutes} min.'),
+              Text('Outside for $_sessionMinutes min.'),
               const SizedBox(height: 8),
               if (work.applies)
                 (work.breakDue
