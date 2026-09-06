@@ -20,6 +20,19 @@ class WeatherGuardApp extends StatelessWidget {
         colorSchemeSeed: Colors.deepPurple,
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        // Text is at least 1.1x, honoring the user's setting up to 1.5x.
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(
+              minScaleFactor: 1.1,
+              maxScaleFactor: 1.5,
+            ),
+          ),
+          child: child!,
+        );
+      },
       home: const AppState(),
     );
   }
