@@ -52,13 +52,23 @@ class RiskEngine {
         reasons.add('No air conditioning during high heat.');
         actions.add('Consider a cooling center (see Nearest Help).');
       }
-      if (profile.age != null && profile.age! >= 65 && feels >= 90) {
+      if (profile.isAtRiskAge && feels >= 90) {
         level = _escalate(level);
-        reasons.add('Age 65+ raises heat-illness risk.');
+        reasons.add(profile.age! >= 65
+            ? 'Age 65+ raises heat-illness risk.'
+            : 'Young children overheat much faster than adults.');
       }
-      if (profile.conditions.isNotEmpty && feels >= 90) {
+      if (profile.hasHeatSensitiveCondition && feels >= 90) {
         level = _escalate(level);
         reasons.add('A health condition on file increases heat sensitivity.');
+      }
+      if (profile.conditions.contains('heatMeds') && feels >= 90) {
+        actions.add('Ask your doctor or pharmacist how your medicine affects heat.');
+      }
+      if (profile.worksOutdoors && feels >= 90) {
+        level = _escalate(level);
+        reasons.add('You work outdoors in this heat.');
+        actions.add('Follow the work/rest schedule on the Today screen.');
       }
     }
     // --- COLD ---
@@ -83,9 +93,19 @@ class RiskEngine {
         reasons.add('No reliable heating during freezing conditions.');
         actions.add('Consider a warming center (see Nearest Help).');
       }
-      if (profile.age != null && profile.age! >= 65 && feels <= 15) {
+      if (profile.isAtRiskAge && feels <= 15) {
         level = _escalate(level);
-        reasons.add('Age 65+ raises hypothermia risk.');
+        reasons.add(profile.age! >= 65
+            ? 'Age 65+ raises hypothermia risk.'
+            : 'Young children lose body heat quickly.');
+      }
+      if (profile.worksOutdoors && feels <= 15) {
+        level = _escalate(level);
+        reasons.add('You work outdoors in freezing conditions.');
+        actions.add('Take warm-up breaks indoors and keep dry layers handy.');
+      }
+      if (profile.conditions.contains('respiratory')) {
+        actions.add('Cold air can trigger breathing problems — cover your mouth outside.');
       }
     }
         // --- WEATHER ALERTS (drivers care most) ---
@@ -104,14 +124,43 @@ class RiskEngine {
       }
       reasons.add('Active alert: ${alert.event}.');
 
-      // Driver mode gets road-specific advice — same engine, different emphasis.
-      if (profile.mode == Mode.driver && isRoadHazard) {
+      // Drivers get road-specific advice — same engine, different emphasis.
+      if (profile.drives && isRoadHazard) {
         level = RiskLevel.danger;
-        actions.add('${alert.event}: avoid flooded roads — "Turn Around, Don\'t Drown."');
+        if (event.contains('flood')) {
+          actions.add('${alert.event}: avoid flooded roads — "Turn Around, Don\'t Drown."');
+        } else if (event.contains('snow') || event.contains('ice')) {
+          actions.add('${alert.event}: roads may be icy — slow down and leave extra room.');
+        } else {
+          actions.add('${alert.event}: watch for downed trees and power lines.');
+        }
         actions.add('Delay non-essential driving until it clears.');
       } else {
         actions.add('Follow official guidance for: ${alert.event}.');
       }
+      if (profile.conditions.contains('mobility') &&
+          (sev == 'severe' || sev == 'extreme')) {
+        actions.add('Line up a ride now in case you are told to leave home.');
+      }
+    }
+
+    // --- Storm damage around the house (trees, roofs, pipes) ---
+    final hazards = weather.hazards;
+    if (hazards.contains(Hazard.storm) || hazards.contains(Hazard.wind)) {
+      actions.add('Damaged trees or roof? See Nearest Help for tree services and handymen.');
+    }
+    if (hazards.contains(Hazard.snow)) {
+      actions.add('Need snow cleared or limbs removed? See Nearest Help.');
+    }
+
+    // Nobody nearby to notice if something goes wrong.
+    if (level == RiskLevel.danger && profile.conditions.contains('livesAlone')) {
+      actions.add('You live alone — ask someone to check on you today.');
+    }
+
+    if (hazards.isEmpty && reasons.isEmpty && weather.tempF == null) {
+      reasons.add('Current temperature is unavailable — showing alerts only.');
+      actions.add('Tap refresh in a few minutes for a new reading.');
     }
           // --- If nothing raised the level, say so plainly ---
     if (level == RiskLevel.safe && reasons.isEmpty) {

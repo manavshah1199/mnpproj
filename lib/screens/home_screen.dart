@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../models/weather_snapshot.dart';
 import '../services/risk_engine.dart';
+import '../widgets/forecast_strip.dart';
+import '../widgets/weather_map.dart';
 import 'settings_screen.dart';
 
 Color riskColor(RiskLevel level) {
@@ -18,20 +20,28 @@ Color riskColor(RiskLevel level) {
 
 class HomeScreen extends StatefulWidget {
   final UserProfile profile;
+  final String accountLabel;
   final WeatherSnapshot weather;
   final RiskResult result;
   final ValueChanged<UserProfile> onProfileChanged;
   final VoidCallback onRefresh;
   final VoidCallback onReset;
+  final VoidCallback onSignOut;
+  final VoidCallback onOpenHelp;
+  final bool refreshing;
 
   const HomeScreen({
     super.key,
     required this.profile,
+    required this.accountLabel,
     required this.weather,
     required this.result,
     required this.onProfileChanged,
     required this.onRefresh,
     required this.onReset,
+    required this.onSignOut,
+    required this.onOpenHelp,
+    this.refreshing = false,
   });
 
   @override
@@ -74,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: widget.onRefresh,
+            onPressed: widget.refreshing ? null : widget.onRefresh,
           ),
           IconButton(
             icon: const Icon(Icons.settings),
@@ -83,14 +93,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                   builder: (_) => SettingsScreen(
                     profile: widget.profile,
+                    accountLabel: widget.accountLabel,
                     onProfileChanged: widget.onProfileChanged,
                     onReset: widget.onReset,
+                    onSignOut: widget.onSignOut,
                   ),
                 ),
               );
             },
           ),
         ],
+        bottom: widget.refreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(4),
+                child: LinearProgressIndicator(),
+              )
+            : null,
       ),
       body: _buildResult(),
     );
@@ -99,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildResult() {
     final weather = widget.weather;
     final result = widget.result;
-    final isWorker = widget.profile.mode == Mode.outdoorWorker;
+    final hazards = weather.hazards;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -123,9 +141,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                '${weather.locationName} · feels like ${result.feelsLike?.round()}°F',
+                result.feelsLike == null
+                    ? '${weather.locationName} · temperature unavailable'
+                    : '${weather.locationName} · feels like ${result.feelsLike!.round()}°F',
                 style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
+              if (weather.shortForecast.isNotEmpty)
+                Text(
+                  weather.shortForecast,
+                  style: const TextStyle(color: Colors.white70),
+                ),
             ],
           ),
         ),
@@ -148,7 +173,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-        if (isWorker) ...[
+        // Shortcut to the help that matters for today's weather.
+        if (hazards.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.support),
+              title: Text(
+                  'Help for ${hazards.map((h) => h.label.toLowerCase()).join(', ')}'),
+              subtitle: const Text(
+                  'Shelters, hospitals, tree services and handymen near you'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: widget.onOpenHelp,
+            ),
+          ),
+        ],
+
+        if (widget.profile.worksOutdoors) ...[
           const SizedBox(height: 16),
           _workSessionCard(result),
         ],
@@ -161,6 +202,54 @@ class _HomeScreenState extends State<HomeScreen> {
         const Text('What to do',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         for (final action in result.actions) Text('• $action'),
+
+        const SizedBox(height: 24),
+        _mapCard(weather),
+
+        if (weather.forecast.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Text('This week',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ForecastStrip(periods: weather.forecast),
+        ],
+      ],
+    );
+  }
+
+  Widget _mapCard(WeatherSnapshot weather) {
+    final lat = weather.lat;
+    final lon = weather.lon;
+    if (lat == null || lon == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text('Temperature map',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Temperature map')),
+                  body: WeatherMap(lat: lat, lon: lon, interactive: true),
+                ),
+              )),
+              icon: const Icon(Icons.fullscreen),
+              label: const Text('Expand'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 220,
+            child: WeatherMap(lat: lat, lon: lon),
+          ),
+        ),
       ],
     );
   }

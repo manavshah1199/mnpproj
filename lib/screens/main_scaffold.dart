@@ -10,25 +10,32 @@ class MainScaffold extends StatefulWidget {
   const MainScaffold({
     super.key,
     required this.profile,
+    required this.accountLabel,
     required this.weather,
     required this.result,
     required this.onProfileChanged,
     required this.onRefresh,
     required this.onReset,
+    required this.onSignOut,
+    this.refreshing = false,
   });
 
   final UserProfile profile;
+  final String accountLabel;
   final WeatherSnapshot weather;
   final RiskResult result;
   final ValueChanged<UserProfile> onProfileChanged;
   final VoidCallback onRefresh;
   final VoidCallback onReset;
+  final VoidCallback onSignOut;
+  final bool refreshing;
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
+  static const _helpTab = 2;
   int _index = 0;
 
   @override
@@ -36,14 +43,18 @@ class _MainScaffoldState extends State<MainScaffold> {
     final screens = [
       HomeScreen(
         profile: widget.profile,
+        accountLabel: widget.accountLabel,
         weather: widget.weather,
         result: widget.result,
         onProfileChanged: widget.onProfileChanged,
         onRefresh: widget.onRefresh,
         onReset: widget.onReset,
+        onSignOut: widget.onSignOut,
+        onOpenHelp: () => setState(() => _index = _helpTab),
+        refreshing: widget.refreshing,
       ),
       CheckinScreen(profile: widget.profile),
-      const HelpScreen(),
+      HelpScreen(weather: widget.weather),
     ];
 
     return Scaffold(

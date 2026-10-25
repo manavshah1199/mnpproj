@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
+import '../widgets/health_survey.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final ValueChanged<UserProfile> onComplete;
@@ -11,13 +12,14 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 0;
-  static const _totalSteps = 4;
+  static const _totalSteps = 5;
 
   Mode _mode = Mode.resident;
   final _ageController = TextEditingController();
+  JobType _jobType = JobType.notWorking;
   bool _hasAC = true;
   bool _hasHeating = true;
-  final Set<String> _conditions = {};
+  Set<String> _conditions = {};
   final _contactNameController = TextEditingController();
   final _contactPhoneController = TextEditingController();
 
@@ -45,6 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final profile = UserProfile(
       mode: _mode,
       age: int.tryParse(_ageController.text),
+      jobType: _jobType,
       hasAC: _hasAC,
       hasHeating: _hasHeating,
       conditions: _conditions.toList(),
@@ -95,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 0:
         return ListView(
           children: [
-            const Text('How will you use WeatherGuard?',
+            const Text('How will you use WeatherSafe?',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             RadioGroup<Mode>(
@@ -105,7 +108,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   for (final m in Mode.values)
                     RadioListTile<Mode>(
-                      title: Text(_modeLabel(m)),
+                      title: Text(m.label),
                       value: m,
                     ),
                 ],
@@ -116,11 +119,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 1:
         return ListView(
           children: [
+            const Text('About you',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             TextField(
               controller: _ageController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Age (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Age (optional)',
+                helperText: 'Older adults and young children face more risk.',
+              ),
             ),
+            const SizedBox(height: 16),
+            const Text('What kind of work do you do?',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            RadioGroup<JobType>(
+              groupValue: _jobType,
+              onChanged: (v) => setState(() => _jobType = v!),
+              child: Column(
+                children: [
+                  for (final j in JobType.values)
+                    RadioListTile<JobType>(
+                      title: Text(j.label),
+                      value: j,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      case 2:
+        return ListView(
+          children: [
+            const Text('Your home',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SwitchListTile(
               title: const Text('I have air conditioning'),
               value: _hasAC,
@@ -133,14 +164,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
         );
-      case 2:
+      case 3:
         return ListView(
           children: [
-            const Text('Health conditions',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            _conditionCheckbox('heart', 'Heart condition'),
-            _conditionCheckbox('respiratory', 'Respiratory (asthma/COPD)'),
-            _conditionCheckbox('diabetes', 'Diabetes'),
+            HealthSurvey(
+              selected: _conditions,
+              onChanged: (next) => setState(() => _conditions = next),
+            ),
           ],
         );
       default:
@@ -160,34 +190,5 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ],
         );
     }
-  }
-
-  String _modeLabel(Mode m) {
-    switch (m) {
-      case Mode.resident:
-        return 'Resident';
-      case Mode.outdoorWorker:
-        return 'Outdoor Worker';
-      case Mode.driver:
-        return 'Driver';
-      case Mode.caregiver:
-        return 'Caregiver';
-    }
-  }
-
-  Widget _conditionCheckbox(String code, String label) {
-    return CheckboxListTile(
-      title: Text(label),
-      value: _conditions.contains(code),
-      onChanged: (checked) {
-        setState(() {
-          if (checked == true) {
-            _conditions.add(code);
-          } else {
-            _conditions.remove(code);
-          }
-        });
-      },
-    );
   }
 }

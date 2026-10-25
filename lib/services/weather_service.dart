@@ -68,12 +68,17 @@ class WeatherService {
         ));
       }
 
+      // Step 4: the 7-day forecast. Optional — the app still works without it.
+      final forecast = await _fetchForecast(props['forecast']);
+
       // Wind speed comes in km/h; convert to mph.
       double? windMph;
       final ws = o['windSpeed']?['value'];
       if (ws != null) windMph = (ws as num) * 0.621371;
 
-      final tempF = _cToF(o['temperature']?['value']);
+      // Stations sometimes report no temperature; fall back to the forecast's.
+      final tempF = _cToF(o['temperature']?['value']) ??
+          (forecast.isEmpty ? null : forecast.first.tempF?.toDouble());
       final humidity = (o['relativeHumidity']?['value'] as num?)?.round();
 
       // Prefer the NWS value; compute it ourselves if the NWS left it blank.
@@ -90,7 +95,10 @@ class WeatherService {
         windMph: windMph,
         shortForecast: o['textDescription'] ?? '',
         alerts: alerts,
+        forecast: forecast,
         locationName: locationName,
+        lat: lat,
+        lon: lon,
         observedAt: DateTime.tryParse(o['timestamp'] ?? ''),
       );
     } catch (e) {
@@ -101,8 +109,31 @@ class WeatherService {
         humidity: 62,
         shortForecast: 'Sample data (live weather unavailable)',
         locationName: 'Middlesex/Union County, NJ',
+        lat: lat,
+        lon: lon,
         isSample: true,
       );
+    }
+  }
+
+  // The NWS forecast is a list of ~14 day/night periods. Empty list on failure.
+  static Future<List<ForecastPeriod>> _fetchForecast(String? url) async {
+    if (url == null) return [];
+    try {
+      final data = await _getJson(url);
+      return [
+        for (final p in (data['properties']['periods'] as List))
+          ForecastPeriod(
+            name: p['name'] ?? '',
+            isDaytime: p['isDaytime'] ?? true,
+            tempF: (p['temperature'] as num?)?.round(),
+            shortForecast: p['shortForecast'] ?? '',
+            precipChance:
+                (p['probabilityOfPrecipitation']?['value'] as num?)?.round(),
+          ),
+      ];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -111,7 +142,7 @@ class WeatherService {
     final res = await http.get(
       Uri.parse(url),
       headers: {'Accept': 'application/geo+json'},
-    );
+    ).timeout(const Duration(seconds: 15));
     if (res.statusCode != 200) {
       throw Exception('NWS request failed: ${res.statusCode}');
     }

@@ -1,7 +1,10 @@
 import '../models/weather_snapshot.dart';
 
 /// The demo scenarios you can force.
-enum SimPreset { off, safe, hotCaution, hotDanger, extremeHeat, freezing, flood }
+enum SimPreset {
+  off, safe, hotCaution, hotDanger, extremeHeat, rain, thunderstorm, snow,
+  freezing, flood
+}
 
 /// Demo-only weather override. Not real app logic — it just swaps in fake
 /// weather when a preset is active, so you can show every risk level on demand.
@@ -21,6 +24,12 @@ class WeatherSim {
         return 'Hot — Danger';
       case SimPreset.extremeHeat:
         return 'Extreme heat';
+      case SimPreset.rain:
+        return 'Heavy rain';
+      case SimPreset.thunderstorm:
+        return 'Severe thunderstorm';
+      case SimPreset.snow:
+        return 'Snowstorm';
       case SimPreset.freezing:
         return 'Freezing — Danger';
       case SimPreset.flood:
@@ -30,47 +39,94 @@ class WeatherSim {
 
   /// If a preset is active, return fake weather; otherwise pass the real one through.
   static WeatherSnapshot apply(WeatherSnapshot real) {
-    final where = real.locationName;
+    // Keep the real place (and its forecast) so the map and week still make sense.
+    WeatherSnapshot sim({
+      double? tempF,
+      double? heatIndexF,
+      double? windChillF,
+      int? humidity,
+      double? windMph,
+      required String shortForecast,
+      List<WeatherAlert> alerts = const [],
+    }) =>
+        WeatherSnapshot(
+          tempF: tempF,
+          heatIndexF: heatIndexF,
+          windChillF: windChillF,
+          humidity: humidity,
+          windMph: windMph,
+          shortForecast: shortForecast,
+          alerts: alerts,
+          forecast: real.forecast,
+          locationName: real.locationName,
+          lat: real.lat,
+          lon: real.lon,
+          isSimulated: true,
+        );
+
     switch (active) {
       case SimPreset.off:
         return real;
       case SimPreset.safe:
-        return WeatherSnapshot(
+        return sim(
             tempF: 72, humidity: 45, windMph: 5,
-            shortForecast: 'Sunny (simulated)',
-            locationName: where, isSimulated: true);
+            shortForecast: 'Sunny (simulated)');
       case SimPreset.hotCaution:
-        return WeatherSnapshot(
+        return sim(
             tempF: 84, heatIndexF: 85, humidity: 55,
-            shortForecast: 'Hot (simulated)',
-            locationName: where, isSimulated: true);
+            shortForecast: 'Hot (simulated)');
       case SimPreset.hotDanger:
-        return WeatherSnapshot(
+        return sim(
             tempF: 94, heatIndexF: 96, humidity: 65,
-            shortForecast: 'Very hot (simulated)',
-            locationName: where, isSimulated: true);
+            shortForecast: 'Very hot (simulated)');
       case SimPreset.extremeHeat:
-        return WeatherSnapshot(
+        return sim(
             tempF: 100, heatIndexF: 106, humidity: 60,
             shortForecast: 'Dangerous heat (simulated)',
-            locationName: where, isSimulated: true);
+            alerts: [
+              WeatherAlert(
+                  event: 'Excessive Heat Warning',
+                  severity: 'Severe',
+                  headline: 'Dangerous heat expected'),
+            ]);
+      case SimPreset.rain:
+        return sim(
+            tempF: 61, humidity: 95, windMph: 12,
+            shortForecast: 'Heavy Rain (simulated)');
+      case SimPreset.thunderstorm:
+        return sim(
+            tempF: 78, humidity: 85, windMph: 35,
+            shortForecast: 'Thunderstorms (simulated)',
+            alerts: [
+              WeatherAlert(
+                  event: 'Severe Thunderstorm Warning',
+                  severity: 'Severe',
+                  headline: 'Damaging winds and falling trees possible'),
+            ]);
+      case SimPreset.snow:
+        return sim(
+            tempF: 26, windChillF: 15, windMph: 18,
+            shortForecast: 'Heavy Snow (simulated)',
+            alerts: [
+              WeatherAlert(
+                  event: 'Winter Storm Warning',
+                  severity: 'Severe',
+                  headline: '8 to 12 inches of snow expected'),
+            ]);
       case SimPreset.freezing:
-        return WeatherSnapshot(
+        return sim(
             tempF: 12, windChillF: 5, windMph: 20,
-            shortForecast: 'Frigid (simulated)',
-            locationName: where, isSimulated: true);
+            shortForecast: 'Frigid (simulated)');
       case SimPreset.flood:
-        return WeatherSnapshot(
+        return sim(
             tempF: 68, humidity: 92, windMph: 15,
             shortForecast: 'Heavy rain (simulated)',
-            locationName: where,
             alerts: [
               WeatherAlert(
                   event: 'Flash Flood Warning',
                   severity: 'Severe',
                   headline: 'Flash flooding likely'),
-            ],
-            isSimulated: true);
+            ]);
     }
   }
 }

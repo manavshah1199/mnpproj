@@ -1,0 +1,9 @@
+[
+  { "name": "Sample Tree Service", "category": "treeService", "address": "Edison, NJ", "phone": "732-555-0101", "note": "Fallen trees, limb removal, storm cleanup", "lat": 40.5187, "lon": -74.4121, "sample": true },
+  { "name": "Sample Emergency Tree Removal", "category": "treeService", "address": "Plainfield, NJ", "phone": "908-555-0102", "note": "24/7 storm response", "lat": 40.6337, "lon": -74.4074, "sample": true },
+  { "name": "Sample Handyman Co.", "category": "handyman", "address": "Metuchen, NJ", "phone": "732-555-0103", "note": "Roof leaks, broken windows, gutters", "lat": 40.5429, "lon": -74.3632, "sample": true },
+  { "name": "Sample Roof & Storm Repair", "category": "handyman", "address": "Westfield, NJ", "phone": "908-555-0104", "note": "Tarping and emergency roof repair", "lat": 40.6590, "lon": -74.3474, "sample": true },
+  { "name": "Sample 24-Hour Plumbing", "category": "plumber", "address": "New Brunswick, NJ", "phone": "732-555-0105", "note": "Frozen and burst pipes, sump pumps", "lat": 40.4862, "lon": -74.4518, "sample": true },
+  { "name": "Sample Water Damage Cleanup", "category": "plumber", "address": "Woodbridge, NJ", "phone": "732-555-0106", "note": "Flooded basements and drying", "lat": 40.5576, "lon": -74.2846, "sample": true },
+  { "name": "Sample Snow Plowing", "category": "snowRemoval", "address": "Piscataway, NJ", "phone": "732-555-0107", "note": "Driveways and walkways", "lat": 40.5549, "lon": -74.4643, "sample": true }
+]

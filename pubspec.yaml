@@ -37,6 +37,10 @@ dependencies:
   shared_preferences: ^2.5.5
   geolocator: ^14.0.3
   http: ^1.6.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  url_launcher: ^6.3.3
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +66,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/centers.json
+    - assets/services.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

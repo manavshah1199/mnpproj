@@ -31,8 +31,17 @@ class LocationService {
         return _fallback;
       }
 
-      // Got permission — read the actual position.
-      final pos = await Geolocator.getCurrentPosition();
+      // Got permission. Use the last known position if the phone has one —
+      // it is instant and avoids starting a live GPS session.
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) {
+        return DeviceLocation(lat: last.latitude, lon: last.longitude);
+      }
+
+      // Otherwise read the actual position (give up after 10s -> fallback).
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 10)),
+      );
       return DeviceLocation(lat: pos.latitude, lon: pos.longitude);
     } catch (e) {
       return _fallback; // anything unexpected -> safe fallback

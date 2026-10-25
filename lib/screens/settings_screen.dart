@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
 import '../services/storage_service.dart';
 import '../services/weather_sim.dart';
+import '../widgets/health_survey.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserProfile profile;
+  final String accountLabel; // "Name (email)" of who is signed in
   final ValueChanged<UserProfile> onProfileChanged;
   final VoidCallback onReset;
+  final VoidCallback onSignOut;
 
   const SettingsScreen({
     super.key,
     required this.profile,
+    required this.accountLabel,
     required this.onProfileChanged,
     required this.onReset,
+    required this.onSignOut,
   });
 
   @override
@@ -22,6 +27,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late Mode _mode;
   late TextEditingController _ageController;
+  late JobType _jobType;
   late bool _hasAC;
   late bool _hasHeating;
   late Set<String> _conditions;
@@ -35,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final p = widget.profile;
     _mode = p.mode;
     _ageController = TextEditingController(text: p.age?.toString() ?? '');
+    _jobType = p.jobType;
     _hasAC = p.hasAC;
     _hasHeating = p.hasHeating;
     _conditions = p.conditions.toSet();
@@ -54,11 +61,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final updated = UserProfile(
       mode: _mode,
       age: int.tryParse(_ageController.text),
+      jobType: _jobType,
       hasAC: _hasAC,
       hasHeating: _hasHeating,
       conditions: _conditions.toList(),
       contactName: _contactNameController.text.trim(),
       contactPhone: _contactPhoneController.text.trim(),
+      careRecipientName: widget.profile.careRecipientName,
     );
     widget.onProfileChanged(updated); // hand it to AppState — it saves + rebuilds
     Navigator.of(context).pop(); // close settings, back to the app
@@ -71,20 +80,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.of(context).pop();
   }
 
-  Widget _conditionCheckbox(String code, String label) {
-    return CheckboxListTile(
-      title: Text(label),
-      value: _conditions.contains(code),
-      onChanged: (checked) {
-        setState(() {
-          if (checked == true) {
-            _conditions.add(code);
-          } else {
-            _conditions.remove(code);
-          }
-        });
-      },
-    );
+  void _signOut() {
+    widget.onSignOut(); // AppState shows the login screen
+    Navigator.of(context).pop();
   }
 
   @override
@@ -94,6 +92,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.account_circle),
+              title: const Text('Signed in as'),
+              subtitle: Text(widget.accountLabel),
+              trailing: TextButton(
+                onPressed: _signOut,
+                child: const Text('Log out'),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           const Text('Mode', style: TextStyle(fontWeight: FontWeight.bold)),
           DropdownButton<Mode>(
             value: _mode,
@@ -101,12 +111,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) {
               if (v != null) setState(() => _mode = v);
             },
-            items: const [
-              DropdownMenuItem(value: Mode.resident, child: Text('Resident')),
-              DropdownMenuItem(
-                  value: Mode.outdoorWorker, child: Text('Outdoor Worker')),
-              DropdownMenuItem(value: Mode.driver, child: Text('Driver')),
-              DropdownMenuItem(value: Mode.caregiver, child: Text('Caregiver')),
+            items: [
+              for (final m in Mode.values)
+                DropdownMenuItem(value: m, child: Text(m.label)),
             ],
           ),
           const SizedBox(height: 8),
@@ -114,6 +121,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             controller: _ageController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Age'),
+          ),
+          const SizedBox(height: 16),
+          const Text('Type of job', style: TextStyle(fontWeight: FontWeight.bold)),
+          DropdownButton<JobType>(
+            value: _jobType,
+            isExpanded: true,
+            onChanged: (v) {
+              if (v != null) setState(() => _jobType = v);
+            },
+            items: [
+              for (final j in JobType.values)
+                DropdownMenuItem(
+                  value: j,
+                  child: Text(j.label, overflow: TextOverflow.ellipsis),
+                ),
+            ],
           ),
           SwitchListTile(
             title: const Text('I have air conditioning'),
@@ -126,11 +149,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) => setState(() => _hasHeating = v),
           ),
           const SizedBox(height: 8),
-          const Text('Health conditions',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          _conditionCheckbox('heart', 'Heart condition'),
-          _conditionCheckbox('respiratory', 'Respiratory (asthma/COPD)'),
-          _conditionCheckbox('diabetes', 'Diabetes'),
+          HealthSurvey(
+            selected: _conditions,
+            onChanged: (next) => setState(() => _conditions = next),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _contactNameController,

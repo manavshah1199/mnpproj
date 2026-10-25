@@ -3,8 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
 
 /// Saves and loads the user's profile on the phone.
+/// Each signed-in account gets its own profile and check-in history.
 class StorageService {
-  static const _profileKey = 'weathersafe.profile';
+  /// Email of the signed-in account; set by AppState after login.
+  static String? userId;
+
+  static String get _profileKey => 'weathersafe.profile.$userId';
+  static String get _checkInKey => 'weathersafe.lastCheckIn.$userId';
 
   /// Save the profile as a JSON string.
   static Future<void> saveProfile(UserProfile profile) async {
@@ -19,8 +24,6 @@ class StorageService {
     if (raw == null) return null;
     return UserProfile.fromJson(jsonDecode(raw));
   }
-
-  static const _checkInKey = 'weathersafe.lastCheckIn';
 
   /// Record that the user checked in right now.
   static Future<void> recordCheckIn() async {
